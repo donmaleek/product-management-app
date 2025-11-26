@@ -1,18 +1,55 @@
+<!--
+/**
+ * PRODUCT CREATION FORM COMPONENT
+ * 
+ * @component ProductCreateForm
+ * @author Eng. Mathias Alfred Kasiba
+ * @description Provides a comprehensive form for creating new products with
+ *              product information, pricing, inventory, and media upload.
+ *              Features form validation and navigation handling.
+ * 
+ * @version 1.0
+ * @created 2024
+ * 
+ * FEATURES:
+ * - Multi-section product form
+ * - Form validation and error handling
+ * - Responsive design with card layout
+ * - Cancel navigation to product list
+ * - Loading states during submission
+ * 
+ * DEPENDENCIES:
+ * - Vue 3 Composition API
+ * - Vue Router for navigation
+ * - Tailwind CSS for styling
+ */
+-->
+
 <template>
+  <!-- Main page container with centered layout -->
   <div class="min-h-screen bg-gray-50 flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8">
     
+    <!-- Main Card Container -->
     <div class="max-w-4xl w-full bg-white rounded-xl shadow-2xl overflow-hidden">
       
+      <!-- Header Section -->
       <header class="p-10 border-b border-gray-100">
         <h1 class="text-3xl font-bold text-gray-900 mb-2">Add New Product</h1>
         <p class="text-gray-500">Enter the details below to add a new item to your inventory.</p>
       </header>
 
+      <!-- Form Body -->
       <form @submit.prevent="handleSubmit" class="p-10 space-y-8">
         
+        <!-- 
+          PRODUCT INFORMATION SECTION
+          - Basic product details
+          - Title and description inputs
+        -->
         <section class="space-y-6">
           <h2 class="text-xl font-semibold text-gray-900">Product Information</h2>
           
+          <!-- Product Title Input -->
           <div>
             <label for="title" class="block text-sm font-medium text-gray-700 mb-2">
               Product Title
@@ -27,6 +64,7 @@
             />
           </div>
 
+          <!-- Product Description Textarea -->
           <div>
             <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
               Product Description
@@ -41,11 +79,18 @@
           </div>
         </section>
 
+        <!-- 
+          PRICING & INVENTORY SECTION
+          - Price and stock quantity inputs
+          - Category selection dropdown
+        -->
         <section class="space-y-6">
           <h2 class="text-xl font-semibold text-gray-900">Pricing & Inventory</h2>
 
+          <!-- Responsive grid for price and stock inputs -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             
+            <!-- Price Input with Currency Symbol -->
             <div>
               <label for="price" class="block text-sm font-medium text-gray-700 mb-2">
                 Price
@@ -65,6 +110,7 @@
               </div>
             </div>
 
+            <!-- Stock Quantity Input -->
             <div>
               <label for="stock" class="block text-sm font-medium text-gray-700 mb-2">
                 Stock Quantity
@@ -81,6 +127,7 @@
             </div>
           </div>
 
+          <!-- Category Selection Dropdown -->
           <div>
             <label for="category" class="block text-sm font-medium text-gray-700 mb-2">
               Category
@@ -98,17 +145,25 @@
                 <option value="groceries">Groceries</option>
                 <option value="home">Home Goods</option>
               </select>
+              <!-- Custom dropdown arrow -->
               <svg class="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
             </div>
           </div>
         </section>
 
+        <!-- 
+          MEDIA UPLOAD SECTION
+          - Drag & drop image upload area
+          - Visual upload interface
+        -->
         <section class="space-y-6">
           <h2 class="text-xl font-semibold text-gray-900">Media</h2>
 
+          <!-- Image Upload Placeholder -->
           <div 
             class="border-2 border-dashed border-gray-300 p-12 rounded-lg text-center cursor-pointer hover:border-blue-500 transition duration-150"
           >
+            <!-- Upload Icon (Cloud) -->
             <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
             
             <p class="mt-2 text-sm text-gray-600">
@@ -118,6 +173,7 @@
               SVG, PNG, JPG or GIF (MAX. 800x400px)
             </p>
 
+            <!-- Hidden input for file upload simulation -->
             <input 
               id="file-upload" 
               name="file-upload" 
@@ -128,12 +184,19 @@
           </div>
         </section>
 
+        <!-- Error Message Display -->
         <div v-if="error" class="mt-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
           {{ error }}
         </div>
 
+        <!-- 
+          FORM ACTION BUTTONS
+          - Cancel navigation to product list
+          - Save product submission
+        -->
         <div class="flex justify-end pt-4 space-x-4">
           
+          <!-- Cancel Button - Navigates back to product list -->
           <button
             type="button"
             @click="cancelForm"
@@ -142,6 +205,7 @@
             Cancel
           </button>
           
+          <!-- Save Product Button -->
           <button
             type="submit"
             :disabled="loading"
@@ -160,9 +224,10 @@
 <script setup>
 /**
  * VUE 3 COMPOSITION API SCRIPT
- * * @author Eng. Mathias Alfred Kasiba
+ * 
+ * @author Eng. Mathias Alfred Kasiba
  * @description Product creation form logic including form state management,
- * validation, submission handling, and navigation.
+ *              validation, submission handling, and navigation.
  */
 
 import { ref, reactive } from 'vue'
@@ -176,7 +241,8 @@ const primaryColor = '#172A5A' // Dark Blue
 
 /**
  * FORM STATE MANAGEMENT
- * * @typedef {Object} ProductForm
+ * 
+ * @typedef {Object} ProductForm
  * @property {string} title - Product name/title
  * @property {string} description - Product description
  * @property {string} category - Product category
@@ -198,7 +264,8 @@ const error = ref(null)
 /**
  * Resets the form to its initial state
  * @function resetForm
- * * @description
+ * 
+ * @description
  * Clears all form fields and error messages
  */
 const resetForm = () => {
@@ -214,7 +281,8 @@ const resetForm = () => {
  * Handles form submission and product creation
  * @async
  * @function handleSubmit
- * * @description
+ * 
+ * @description
  * - Validates required fields
  * - Simulates API call for product creation
  * - Handles loading states and errors
@@ -240,11 +308,11 @@ const handleSubmit = async () => {
     // Simulate successful save
     // In production: await productStore.addProduct(form)
     
-    // Show success message and navigate
-    alert('Product successfully added!') // Using alert for immediate feedback
+    // Show success message
+    error.value = 'Product successfully added! (Form reset simulated)'
     
-    // RECTIFIED: Navigate back to products list after successful submission
-    router.push('/products')
+    // Reset form after successful submission
+    resetForm()
     
   } catch (err) {
     error.value = 'Failed to save product. Please try again.'
@@ -257,7 +325,8 @@ const handleSubmit = async () => {
 /**
  * Cancels form and navigates back to product list
  * @function cancelForm
- * * @description
+ * 
+ * @description
  * - Navigates to '/products' route
  * - Resets form state before leaving
  */
@@ -273,7 +342,8 @@ const cancelForm = () => {
 <style scoped>
 /**
  * COMPONENT-SCOPED STYLES
- * * @description
+ * 
+ * @description
  * Additional component-specific styles.
  * Currently using Tailwind CSS for most styling.
  */

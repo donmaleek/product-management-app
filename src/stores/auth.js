@@ -1,24 +1,20 @@
 /**
  * AUTHENTICATION STORE (Pinia)
- * 
- * @file stores/auth.js
+ * * @file stores/auth.js
  * @author Eng. Mathias Alfred Kasiba
  * @description Centralized authentication state management using Pinia.
- *              Handles user login, logout, session persistence, and
- *              authentication state across the application.
- * 
- * @version 1.0
+ * Handles user login, logout, session persistence, and
+ * authentication state across the application.
+ * * @version 1.0
  * @created 2024
- * 
- * FEATURES:
+ * * FEATURES:
  * - User authentication state management
  * - JWT token storage and validation
  * - Local storage persistence for session recovery
  * - Mock authentication for development/testing
  * - Real API integration for production
  * - Computed authentication status
- * 
- * DEPENDENCIES:
+ * * DEPENDENCIES:
  * - Pinia for state management
  * - Axios for HTTP requests
  * - Vue 3 Composition API
@@ -27,14 +23,13 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import axios from 'axios'
+import { useRouter } from 'vue-router' // Import useRouter for programmatic navigation
 
 /**
  * AUTHENTICATION STORE DEFINITION
- * 
- * @function useAuthStore
+ * * @function useAuthStore
  * @description Pinia store for managing authentication state and operations
- * 
- * Store Structure:
+ * * Store Structure:
  * - State: token, user information
  * - Getters: computed authentication status
  * - Actions: login, logout, session restoration
@@ -44,10 +39,13 @@ export const useAuthStore = defineStore('auth', () => {
   // REACTIVE STATE DEFINITIONS
   // =============================================
 
+  // Initialize useRouter *inside* the defineStore callback to ensure
+  // it has access to the router instance provided by the app.
+  const router = useRouter() 
+
   /**
    * Authentication Token State
-   * 
-   * @type {import('vue').Ref<string>}
+   * * @type {import('vue').Ref<string>}
    * @description
    * - Stores JWT token for authenticated requests
    * - Persisted in localStorage for session recovery
@@ -57,8 +55,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   /**
    * User Information State
-   * 
-   * @type {import('vue').Ref<Object|null>}
+   * * @type {import('vue').Ref<Object|null>}
    * @description
    * - Stores authenticated user data
    * - Persisted in localStorage for session recovery
@@ -72,18 +69,16 @@ export const useAuthStore = defineStore('auth', () => {
 
   /**
    * Authentication Status Checker
-   * 
-   * @type {import('vue').ComputedRef<boolean>}
+   * * @type {import('vue').ComputedRef<boolean>}
    * @description
    * - Returns true if user has valid authentication token
    * - Used throughout app for route guards and conditional rendering
    * - Automatically updates when token state changes
-   * 
-   * @example
+   * * @example
    * // Usage in components:
    * const authStore = useAuthStore()
    * if (authStore.isAuthenticated) {
-   *   // User is logged in
+   * // User is logged in
    * }
    */
   const isAuthenticated = computed(() => !!token.value)
@@ -94,76 +89,83 @@ export const useAuthStore = defineStore('auth', () => {
 
   /**
    * User Authentication Handler
-   * 
-   * @async
+   * * @async
    * @function login
-   * @param {Object} credentials - User login credentials
-   * @param {string} credentials.username - User's username or email
-   * @param {string} credentials.password - User's password
+   * @param {Object} rawCredentials - User login credentials from the form
+   * @param {string} rawCredentials.username - User's email or username
+   * @param {string} rawCredentials.password - User's password
    * @returns {Promise<{success: boolean, error?: string}>}
-   * 
-   * @description
-   * Handles user authentication with dual-mode support:
-   * 1. Mock authentication for development/testing with specific credentials
-   * 2. Real API authentication for production/other users
-   * 
-   * Authentication Flow:
-   * 1. Check for mock credentials (development mode)
-   * 2. If mock match, return success with mock token
-   * 3. Otherwise, make real API call to authentication endpoint
-   * 4. Store token and user data on successful authentication
-   * 5. Return appropriate success/error response
-   * 
-   * @example
+   * * @description
+   * Handles user authentication with multiple mock credential sets for development.
+   * * Authentication Flow:
+   * 1. Trim whitespace from form-submitted credentials.
+   * 2. Check for `mathayo77/mathayo77` mock credentials. If match, handle mock login.
+   * 3. Else, check for `kminchelle/0lelplR` mock credentials. If match, handle mock login.
+   * 4. If neither mock matches, attempt a real API call using the *submitted form credentials*.
+   * 5. Store token and user data on successful authentication (mock or real).
+   * 6. Return appropriate success/error response.
+   * * @example
    * // Successful login:
    * const result = await authStore.login({ username: 'user', password: 'pass' })
    * if (result.success) {
-   *   // Redirect to dashboard
+   * // Redirect to dashboard
    * } else {
-   *   // Show error message
+   * // Show error message
    * }
    */
-  const login = async (credentials) => {
+  const login = async (rawCredentials) => {
+    // Apply trimming to form-submitted credentials to prevent issues with accidental whitespace
+    const formCredentials = {
+      username: rawCredentials.username.trim(),
+      password: rawCredentials.password.trim(),
+    };
+
     // =============================================
     // MOCK AUTHENTICATION (Development/Testing)
+    // Checks for specific mock credential sets
     // =============================================
     
-    /**
-     * Development Credentials Configuration
-     * @constant
-     * @description
-     * Pre-defined credentials for local development and testing
-     * Bypasses API calls for faster development iteration
-     */
-    const MOCK_USERNAME = 'mathayo77'
-    const MOCK_PASSWORD = 'mathayo77'
+    // Mock Set 1: Your custom credentials
+    const MOCK_USERNAME_1 = 'mathayo77'
+    const MOCK_PASSWORD_1 = 'mathayo77'
     
-    if (credentials.username === MOCK_USERNAME && credentials.password === MOCK_PASSWORD) {
-      console.log('Auth Store: Using mock authentication for development')
-      
-      // Set mock authentication data
-      token.value = 'mock-token-123'
-      user.value = { username: credentials.username }
-      
-      // Persist to localStorage for session recovery
+    if (formCredentials.username === MOCK_USERNAME_1 && formCredentials.password === MOCK_PASSWORD_1) {
+      console.log('Auth Store: Using mock authentication for development (mathayo77)')
+      token.value = 'mock-token-mathayo77' // Unique mock token
+      user.value = { username: formCredentials.username, email: 'mathayo77@example.com' } // Example user data
       localStorage.setItem('auth_token', token.value)
       localStorage.setItem('user_info', JSON.stringify(user.value))
-      
       return { success: true }
     }
 
+    // Mock Set 2: kminchelle credentials
+    const MOCK_USERNAME_2 = 'kminchelle'
+    const MOCK_PASSWORD_2 = '0lelplR'
+    
+    if (formCredentials.username === MOCK_USERNAME_2 && formCredentials.password === MOCK_PASSWORD_2) {
+      console.log('Auth Store: Using mock authentication for development (kminchelle)')
+      token.value = 'mock-token-kminchelle' // Unique mock token
+      user.value = { username: formCredentials.username, email: 'kminchelle@dummy.com' } // Example user data
+      localStorage.setItem('auth_token', token.value)
+      localStorage.setItem('user_info', JSON.stringify(user.value))
+      return { success: true }
+    }
+    
     // =============================================
-    // REAL API AUTHENTICATION (Production)
+    // REAL API AUTHENTICATION (DummyJSON)
+    // Only reached if neither mock credentials matched.
+    // It will use the credentials submitted via the form.
     // =============================================
     
     try {
+      console.log('Auth Store: No mock credentials matched, attempting real API authentication.')
       /**
        * API Authentication Request
        * @description
-       * Makes actual HTTP request to authentication endpoint
-       * Uses dummyjson.com as example authentication service
+       * Makes actual HTTP request to authentication endpoint using form-submitted credentials.
+       * Uses dummyjson.com as example authentication service.
        */
-      const response = await axios.post('https://dummyjson.com/auth/login', credentials)
+      const response = await axios.post('https://dummyjson.com/auth/login', formCredentials);
       
       // Validate successful authentication response
       if (response.data.token) {
@@ -175,53 +177,57 @@ export const useAuthStore = defineStore('auth', () => {
         localStorage.setItem('auth_token', response.data.token)
         localStorage.setItem('user_info', JSON.stringify(response.data))
         
-        console.log('Auth Store: User authenticated successfully via API')
+        console.log('Auth Store: User authenticated successfully via real API.')
         return { success: true }
       } else {
         // Handle unexpected API response (no token provided)
         console.error('Auth Store: API response missing authentication token')
         return { 
           success: false, 
-          error: 'Authentication failed: Invalid server response' 
+          error: 'Authentication failed: Invalid server response from DummyJSON' 
         }
       }
     } catch (error) {
       /**
        * Authentication Error Handling
        * @description
-       * Handles various authentication failure scenarios:
-       * - Invalid credentials (401)
+       * Handles various authentication failure scenarios from the real API:
+       * - Invalid credentials (400/401)
        * - Network errors
        * - Server errors (5xx)
        * - Unexpected API responses
        */
-      console.error('Auth Store: Authentication API error:', error)
+      console.error('Auth Store: Authentication API error (DummyJSON):', error)
       
+      // >>> LOG THE SPECIFIC API ERROR MESSAGE <<<
+      if (error.response && error.response.data && error.response.data.message) {
+        console.error('DummyJSON API Error Message:', error.response.data.message);
+      } else {
+        console.error('No specific DummyJSON error message found in response data.');
+      }
+
       return { 
         success: false, 
-        error: error.response?.data?.message || 'Login failed. Please check your credentials.' 
+        error: error.response?.data?.message || 'Login failed via DummyJSON. Please check API status or credentials.' 
       }
     }
   }
 
   /**
    * User Logout Handler
-   * 
-   * @function logout
+   * * @function logout
    * @description
-   * Clears user authentication state and removes persisted data
-   * Should be called when user explicitly logs out or session expires
-   * 
-   * Logout Process:
+   * Clears user authentication state and removes persisted data.
+   * Redirects to the login page.
+   * * Logout Process:
    * 1. Clear reactive state (token and user)
    * 2. Remove persisted data from localStorage
-   * 3. (Optional) Invalidate token on server side
-   * 
-   * @example
+   * 3. Redirect to /login
+   * 4. (Optional) Invalidate token on server side
+   * * @example
    * // Usage in components:
    * const handleLogout = () => {
-   *   authStore.logout()
-   *   router.push('/login')
+   * authStore.logout()
    * }
    */
   const logout = () => {
@@ -235,25 +241,25 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('auth_token')
     localStorage.removeItem('user_info')
     
+    // RECTIFIED: Redirect to login page after logout
+    router.push('/login')
+
     // Optional: Add server-side token invalidation here
     // await axios.post('/api/auth/logout')
   }
 
   /**
    * Session Restoration Handler
-   * 
-   * @function restoreSession
+   * * @function restoreSession
    * @description
    * Attempts to restore user session from persisted storage (localStorage)
    * Called during application initialization to maintain login state
    * across page refreshes and browser sessions
-   * 
-   * Restoration Process:
+   * * Restoration Process:
    * 1. Check for existing token in localStorage
    * 2. If token exists, restore state from localStorage
    * 3. (Optional) Validate token with server for extra security
-   * 
-   * @example
+   * * @example
    * // Usage in main.js/app.js:
    * const authStore = useAuthStore()
    * authStore.restoreSession()
@@ -282,8 +288,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   /**
    * Store Public API
-   * 
-   * @description
+   * * @description
    * Exposes state, getters, and actions to the rest of the application
    * All returned values are reactive and can be used in Vue components
    */
@@ -304,36 +309,29 @@ export const useAuthStore = defineStore('auth', () => {
 
 /**
  * STORE USAGE EXAMPLES
- * 
- * @example
+ * * @example
  * // Component usage:
  * import { useAuthStore } from '@/stores/auth'
- * 
- * const authStore = useAuthStore()
- * 
- * // Check authentication status
+ * * const authStore = useAuthStore()
+ * * // Check authentication status
  * if (authStore.isAuthenticated) {
- *   console.log('User is logged in:', authStore.user)
+ * console.log('User is logged in:', authStore.user)
  * }
- * 
- * // Perform login
+ * * // Perform login
  * const result = await authStore.login({
- *   username: 'user@example.com',
- *   password: 'password123'
+ * username: 'user@example.com',
+ * password: 'password123'
  * })
- * 
- * // Perform logout
+ * * // Perform logout
  * authStore.logout()
- * 
- * @example
+ * * @example
  * // Route guard usage (in router):
  * router.beforeEach((to, from, next) => {
- *   const authStore = useAuthStore()
- *   
- *   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
- *     next('/login')
- *   } else {
- *     next()
- *   }
+ * const authStore = useAuthStore()
+ * * if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+ * next('/login')
+ * } else {
+ * next()
+ * }
  * })
  */
