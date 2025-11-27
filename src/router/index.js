@@ -1,5 +1,4 @@
 // src/router/index.js
-
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth' 
 
@@ -9,7 +8,11 @@ import ProductList from '../components/ProductList.vue'
 import AddProduct from '../components/AddProduct.vue'
 import ProductDetail from '../components/ProductDetail.vue'
 import NotFound from '../components/NotFound.vue'
-import ForgotPassword from '../components/ForgotPassword.vue' // Correct import path now confirmed
+import ForgotPassword from '../components/ForgotPassword.vue'
+import Orders from '../components/Orders.vue'
+import Customers from '../components/Customers.vue'
+import Settings from '../components/Settings.vue'
+import Dashboard from '../components/Dashboard.vue' // Add this import
 
 // MainLayout is in src/layouts/
 import MainLayout from '../layouts/MainLayout.vue' 
@@ -23,51 +26,61 @@ const router = createRouter({
       component: Login,
       meta: { requiresAuth: false, hideSidebar: true, hideNavbar: true, title: 'Login' }
     },
-    // Add the ForgotPassword route here, typically alongside other non-authenticated routes
     {
       path: '/forgot-password',
-      name: 'ForgotPassword', // Consistent naming convention
+      name: 'ForgotPassword',
       component: ForgotPassword,
       meta: { requiresAuth: false, hideSidebar: true, hideNavbar: true, title: 'Forgot Password' }
     },
-    // RECTIFIED: Removed '/app' parent route.
-    // Instead, define routes that should use MainLayout directly.
-    // Each route that needs MainLayout will have it as its component,
-    // and the actual content will be rendered in MainLayout's <router-view>.
     {
-      path: '/', // Changed root path to also use MainLayout if needed or redirect
-      component: MainLayout, // MainLayout now acts as the top-level layout for authenticated pages
+      path: '/',
+      component: MainLayout,
+      meta: { requiresAuth: true },
       children: [
         {
-          path: '', // Default child route for '/' after login
-          redirect: '/products', // Redirects from / to /products (within MainLayout)
-          meta: { requiresAuth: true }
+          path: '',
+          name: 'Dashboard',
+          component: Dashboard, // Changed from redirect to component
+          meta: { requiresAuth: true, title: 'Dashboard' }
         },
         {
-          path: 'products', // Matches /product-management-app/products
+          path: 'products',
           name: 'ProductList',
-          component: ProductList, // ProductList will be rendered inside MainLayout's <router-view>
-          meta: { requiresAuth: true, hideSidebar: false, title: 'Product List' }
+          component: ProductList,
+          meta: { requiresAuth: true, title: 'Product List' }
         },
         {
-          path: 'products/new', // Matches /product-management-app/products/new
+          path: 'products/new',
           name: 'AddProduct',
-          component: AddProduct, // AddProduct will be rendered inside MainLayout's <router-view>
-          meta: { requiresAuth: true, hideSidebar: true, title: 'Add New Product' }
+          component: AddProduct,
+          meta: { requiresAuth: true, title: 'Add New Product' }
         },
         {
-          path: 'products/:id', // Matches /product-management-app/products/:id
+          path: 'products/:id',
           name: 'ProductDetail',
-          component: ProductDetail, // ProductDetail will be rendered inside MainLayout's <router-view>
-          meta: { requiresAuth: true, hideSidebar: true, title: 'Product Detail' }
+          component: ProductDetail,
+          meta: { requiresAuth: true, title: 'Product Detail' }
+        },
+        {
+          path: 'orders',
+          name: 'Orders',
+          component: Orders,
+          meta: { requiresAuth: true, title: 'Orders' }
+        },
+        {
+          path: 'customers',
+          name: 'Customers',
+          component: Customers,
+          meta: { requiresAuth: true, title: 'Customers' }
+        },
+        {
+          path: 'settings',
+          name: 'Settings',
+          component: Settings,
+          meta: { requiresAuth: true, title: 'Settings' }
         }
       ]
     },
-    // RECTIFIED: Removed the separate / redirect. The MainLayout's child redirect handles this.
-    // You might also consider a more explicit redirect from '/' to '/login' if not authenticated.
-    // For now, the beforeEach guard handles initial redirection.
-
-    // Catch-all route for 404
     {
       path: '/:catchAll(.*)',
       name: 'NotFound',
@@ -80,10 +93,7 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore();
 
-  // This part of your guard for rehydrating from localStorage is fine.
   if (!authStore.isAuthenticated && localStorage.getItem('userToken')) {
-    // Assuming setToken exists on your authStore and takes a token string
-    // If your authStore.restoreSession() handles this, you might call that instead.
     authStore.setToken(localStorage.getItem('userToken')); 
     console.log("Navigation Guard: Rehydrating auth store from localStorage.");
   }
@@ -97,9 +107,8 @@ router.beforeEach((to, from, next) => {
     console.log(`Navigation Guard: Access denied. Redirecting to Login.`);
     next({ name: 'Login' });
   } else if (to.name === 'Login' && isAuthenticated) {
-    console.log(`Navigation Guard: Already authenticated. Redirecting from Login to ProductList.`);
-    // RECTIFIED: Redirect to the correct ProductList path without '/app'
-    next({ name: 'ProductList' }); 
+    console.log(`Navigation Guard: Already authenticated. Redirecting from Login to Dashboard.`);
+    next({ name: 'Dashboard' }); // Changed from ProductList to Dashboard
   } else {
     next();
   }

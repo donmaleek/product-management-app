@@ -15,6 +15,7 @@
  * - CRUD operations (Create, Read, Update, Delete)
  * - Real-time search and filtering
  * - Category management
+ * - Stock status filtering
  * - Loading states and error handling
  * - Authentication-integrated API calls
  * 
@@ -101,6 +102,18 @@ export const useProductsStore = defineStore('products', () => {
    */
   const selectedCategory = ref('')
 
+  /**
+   * Selected Stock Status Filter
+   * 
+   * @type {import('vue').Ref<string>}
+   * @description
+   * - Currently selected stock status for filtering
+   * - Empty string shows all statuses
+   * - Options: 'in_stock', 'low_stock', 'out_of_stock'
+   * - Used in computed filteredProducts getter
+   */
+  const selectedStatus = ref('')
+
   // =============================================
   // EXTERNAL STORE DEPENDENCIES
   // =============================================
@@ -124,14 +137,20 @@ export const useProductsStore = defineStore('products', () => {
    * 
    * @type {import('vue').ComputedRef<Array<Object>>}
    * @description
-   * - Dynamically filters products based on search and category
-   * - Reacts to changes in searchQuery and selectedCategory
+   * - Dynamically filters products based on search, category, and stock status
+   * - Reacts to changes in searchQuery, selectedCategory, and selectedStatus
    * - Returns filtered subset of products array
    * 
    * Filtering Logic:
    * 1. Apply search filter on product titles (case-insensitive)
    * 2. Apply category filter if selected
-   * 3. Return filtered array
+   * 3. Apply stock status filter if selected
+   * 4. Return filtered array
+   * 
+   * Stock Status Classification:
+   * - in_stock: stock > 50
+   * - low_stock: stock > 10 and ≤ 50
+   * - out_of_stock: stock ≤ 10
    * 
    * @example
    * // Usage in components:
@@ -144,7 +163,8 @@ export const useProductsStore = defineStore('products', () => {
     // Apply search filter
     if (searchQuery.value) {
       filtered = filtered.filter(product => 
-        product.title.toLowerCase().includes(searchQuery.value.toLowerCase())
+        product.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+        product.description.toLowerCase().includes(searchQuery.value.toLowerCase())
       )
     }
 
@@ -153,6 +173,21 @@ export const useProductsStore = defineStore('products', () => {
       filtered = filtered.filter(product => 
         product.category === selectedCategory.value
       )
+    }
+
+    // Apply stock status filter
+    if (selectedStatus.value) {
+      filtered = filtered.filter(product => {
+        const stock = product.stock
+        let status = ''
+        
+        // Stock status classification logic
+        if (stock > 50) status = 'in_stock'
+        else if (stock > 10) status = 'low_stock'
+        else status = 'out_of_stock'
+        
+        return status === selectedStatus.value
+      })
     }
 
     return filtered
@@ -173,7 +208,7 @@ export const useProductsStore = defineStore('products', () => {
    * // Returns: ['electronics', 'clothing', 'home', ...]
    */
   const categories = computed(() => {
-    return [...new Set(products.value.map(product => product.category))]
+    return [...new Set(products.value.map(product => product.category))].sort()
   })
 
   // =============================================
@@ -200,6 +235,33 @@ export const useProductsStore = defineStore('products', () => {
     Authorization: `Bearer ${authStore.token}`,
     'Content-Type': 'application/json'
   })
+
+  /**
+   * Stock Status Classifier
+   * 
+   * @function getStockStatus
+   * @param {number} stock - Product stock quantity
+   * @returns {string} Stock status classification
+   * 
+   * @description
+   * Classifies product stock into status categories
+   * Consistent with filtering logic in filteredProducts
+   * 
+   * Classification:
+   * - in_stock: stock > 50
+   * - low_stock: stock > 10 and ≤ 50
+   * - out_of_stock: stock ≤ 10
+   * 
+   * @example
+   * getStockStatus(100) // returns 'in_stock'
+   * getStockStatus(25)  // returns 'low_stock'
+   * getStockStatus(5)   // returns 'out_of_stock'
+   */
+  const getStockStatus = (stock) => {
+    if (stock > 50) return 'in_stock'
+    if (stock > 10) return 'low_stock'
+    return 'out_of_stock'
+  }
 
   // =============================================
   // ACTIONS (STORE METHODS) - READ OPERATIONS
@@ -428,6 +490,7 @@ export const useProductsStore = defineStore('products', () => {
     error,
     searchQuery,
     selectedCategory,
+    selectedStatus,
     
     // Getters
     filteredProducts,
@@ -438,61 +501,9 @@ export const useProductsStore = defineStore('products', () => {
     fetchProductById,
     addProduct,
     updateProduct,
-    deleteProduct
+    deleteProduct,
+    
+    // Utility functions
+    getStockStatus
   }
 })
-
-/**
- * STORE USAGE EXAMPLES AND BEST PRACTICES
- * 
- * @example
- * // Component usage - Product List:
- * import { useProductsStore } from '@/stores/products'
- * 
- * const productsStore = useProductsStore()
- * 
- * // Fetch products on component mount
- * onMounted(async () => {
- *   await productsStore.fetchProducts()
- * })
- * 
- * // Use computed products with filtering
- * const displayedProducts = computed(() => productsStore.filteredProducts)
- * 
- * // Handle search
- * const searchQuery = computed({
- *   get: () => productsStore.searchQuery,
- *   set: (value) => productsStore.searchQuery = value
- * })
- * 
- * @example
- * // Component usage - Product Management:
- * // Add new product
- * const handleAddProduct = async (productData) => {
- *   try {
- *     await productsStore.addProduct(productData)
- *     showNotification('Product added successfully!')
- *   } catch (error) {
- *     showError('Failed to add product')
- *   }
- * }
- * 
- * // Update product
- * const handleUpdateProduct = async (id, productData) => {
- *   try {
- *     await productsStore.updateProduct(id, productData)
- *     showNotification('Product updated successfully!')
- *   } catch (error) {
- *     showError('Failed to update product')
- *   }
- * }
- * 
- * @example
- * // Error handling in components:
- * watch(() => productsStore.error, (newError) => {
- *   if (newError) {
- *     // Show error message to user
- *     alert(newError)
- *   }
- * })
- */
